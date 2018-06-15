@@ -12,11 +12,11 @@ output:
 articleID <- "8-8-2014_PS" # insert the article ID code here e.g., "10-3-2015_PS"
 reportType <- "final" # specify whether this is the 'pilot' report or 'final' report
 pilotNames <- "Michael Frank" # insert the pilot's name here e.g., "Tom Hardwicke".  If there are multiple cpilots enter both names in a character string e.g., "Tom Hardwicke, Bob Dylan"
-copilotNames <- "" # # insert the co-pilot's name here e.g., "Michael Frank". If there are multiple co-pilots enter both names in a character string e.g., "Tom Hardwicke, Bob Dylan"
+copilotNames <- "Kyle MacDonald" # # insert the co-pilot's name here e.g., "Michael Frank". If there are multiple co-pilots enter both names in a character string e.g., "Tom Hardwicke, Bob Dylan"
 pilotTTC <- 120 # insert the pilot's estimated time to complete (in minutes, fine to approximate) e.g., 120
-copilotTTC <- NA # insert the co-pilot's estimated time to complete (in minutes, fine to approximate) e.g., 120
+copilotTTC <- 30 # insert the co-pilot's estimated time to complete (in minutes, fine to approximate) e.g., 120
 pilotStartDate <- as.Date("06/13/18", format = "%m/%d/%y") # insert the pilot's start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
-copilotStartDate <- as.Date("", format = "%m/%d/%y") # insert the co-pilot's start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+copilotStartDate <- as.Date("06/13/18", format = "%m/%d/%y") # insert the co-pilot's start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
 completionDate <- NA # copilot insert the date of final report completion (after any necessary rounds of author assistance) in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
 ```
 
@@ -97,7 +97,6 @@ d_raw %>%
   kable
 ```
 
-
 Questions in this study are (Table 1):
 
 > 1. Recognition of the limits of one’s own knowledge
@@ -123,13 +122,13 @@ From the included key, the following variables appear to map to these questions 
 
 I investigated the hypothesis that Question 4a maps to:
 
-* `p.future`: How do you think your relationship will develop in the futureafter this incident? Please use at least 5 minutes to type it down in the box below.
+* `p.future`: How do you think your relationship will develop in the future after this incident? Please use at least 5 minutes to type it down in the box below.
 
 But that's a free-form description and I don't think that's what we're talking about. Given this I do not see a variable that maps to this one. Thus, this is an:
 
 INSUFFICIENT INFORMATION ERROR
 
-Ignoring this variable, we select down the variables we need for this analysis and then gather them into two dataframes. One has the wisdom composite, and one includes the variables. (Note this second stays in wide format for PCA). 
+Ignoring this variable, we select the variables we need for this analysis and then gather them into two dataframes. One has the wisdom composite, and one includes the variables. (Note this second stays in wide format for PCA). 
 
 ```{r}
 # do some releveling using key
@@ -188,7 +187,6 @@ filter(d_allqs, is.na(d$FAC1_1)) %>%
   kable()
 ```
 
-
 They are not concentrated in one condition. 
 
 ```{r}
@@ -197,7 +195,6 @@ d %>%
   summarise(n_nas = sum(is.na(FAC1_1))) %>%
   kable()
 ```
-
 
 We want to reproduce Figure 1:
 
@@ -217,8 +214,9 @@ ggplot(ms,
                     ymax = mean + sem), 
                 width = .2, 
                 position = position_dodge(width = .9)) + 
+  geom_hline(yintercept = 0) + 
   ylim(-.8, .6) + 
-  theme_few() + 
+  theme_base() + 
   scale_fill_solarized() + 
   ylab("Wise Reasoning Composite")
 ```
@@ -259,11 +257,15 @@ c1_aov <- ezANOVA(data = d_contrast,
                   between = .(contrast1), 
                   type = 3)
 
+c1_df <- c1_aov$ANOVA$DFd
 c1_f <- c1_aov$ANOVA$F
 c1_t <- sqrt(c1_aov$ANOVA$F)
 c1_p <- c1_aov$ANOVA$p
 c1_ges <- c1_aov$ANOVA$ges
 
+reportObject <- reproCheck(reportedValue = '113', 
+                           obtainedValue = c1_df,
+                           valueType = 'df')
 reportObject <- reproCheck(reportedValue = '< .001', 
                            obtainedValue = c1_p,
                            valueType = 'p', eyeballCheck = TRUE)
@@ -284,11 +286,16 @@ c2_aov <- ezANOVA(data = d_contrast,
                   between = .(contrast2), 
                   type = 3)
 
+c2_df <- c2_aov$ANOVA$DFd
 c2_f <- c2_aov$ANOVA$F
 c2_t <- sqrt(c2_aov$ANOVA$F)
 c2_p <- c2_aov$ANOVA$p
 c2_ges <- c2_aov$ANOVA$ges
 
+
+reportObject <- reproCheck(reportedValue = '113', 
+                           obtainedValue = c2_df,
+                           valueType = 'df')
 reportObject <- reproCheck(reportedValue = '.007', 
                            obtainedValue = c2_p,
                            valueType = 'p')
@@ -308,11 +315,15 @@ c3_aov <- ezANOVA(data = d_contrast,
                   between = .(contrast3), 
                   type = 3)
 
+c3_df <- c3_aov$ANOVA$DFd
 c3_f <- c3_aov$ANOVA$F
 c3_t <- sqrt(c3_aov$ANOVA$F)
 c3_p <- c3_aov$ANOVA$p
 c3_ges <- c3_aov$ANOVA$ges
 
+reportObject <- reproCheck(reportedValue = '113', 
+                           obtainedValue = c3_df,
+                           valueType = 'df')
 reportObject <- reproCheck(reportedValue = 'ns', 
                            obtainedValue = c3_p,
                            valueType = 'p', eyeballCheck = TRUE)
