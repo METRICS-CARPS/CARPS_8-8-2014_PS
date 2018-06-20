@@ -94,8 +94,10 @@ d_raw %>%
   group_by(code) %>%
   summarise(n = n(), 
             n_female = sum(gender == 1)) %>%
-  kable
+  kable()
 ```
+
+![Figure 1](images/table1.png)
 
 Questions in this study are (Table 1):
 
@@ -124,7 +126,13 @@ I investigated the hypothesis that Question 4a maps to:
 
 * `p.future`: How do you think your relationship will develop in the future after this incident? Please use at least 5 minutes to type it down in the box below.
 
-But that's a free-form description and I don't think that's what we're talking about. Given this I do not see a variable that maps to this one. Thus, this is an:
+But that's a free-form description and I don't think that's what we're talking about. Given this I do not see a variable that maps to this one.
+
+KM: I took another pass through their codebook, and I think Question 4a maps onto the "Outcomes" variable. From the key,
+
+> Outcomes: Thinking about how the events with regard to this incident will unfold in the future, how many diffe...-Number of alternatives
+
+However, this variable does not exist in the `Study_2_updated.sav` raw data file. Thus, this is an:
 
 INSUFFICIENT INFORMATION ERROR
 
@@ -142,7 +150,6 @@ d_allqs <- d_raw %>%
 
 d <- d_raw %>%
   select(ID, distance, issue, FAC1_1)
-
 ```
 
 # Step 4: Run analysis
@@ -222,6 +229,31 @@ ggplot(ms,
 ```
 
 This generally looks similar - there might be some small numerical differences in the error bars but it's hard to tell just by eyeballing.  
+
+Eyeball checks for the mean composite scores in Figure 1.
+
+```{r}
+# distancing other
+reportObject <- reproCheck(reportedValue = '0.35', 
+                           obtainedValue = 0.35,
+                           valueType = 'mean',
+                           eyeballCheck = TRUE)
+# distancing self
+reportObject <- reproCheck(reportedValue = '0.15', 
+                           obtainedValue = 0.15,
+                           valueType = 'mean',
+                           eyeballCheck = TRUE)
+# immersed other
+reportObject <- reproCheck(reportedValue = '0.2', 
+                           obtainedValue = 0.2,
+                           valueType = 'mean',
+                           eyeballCheck = TRUE)
+# immersed self
+reportObject <- reproCheck(reportedValue = '-0.58', 
+                           obtainedValue = -0.58,
+                           valueType = 'mean',
+                           eyeballCheck = TRUE)
+```
 
 ## Inferential statistics
 
@@ -306,6 +338,7 @@ reportObject <- reproCheck(reportedValue = '.06',
                            obtainedValue = c2_ges,
                            valueType = 'pes')
 ```
+
 >  We also tested whether reasoning about other people’s problems benefits from additional distance and found that participants in the other-distanced condition did not differ from participants in the other-immersed conditions (Contrast 3; see Fig. 1), t(113) = 0.56, n.s., ηp 2 = .003; we return to this finding in the General Discussion.
 
 ```{r}
@@ -337,7 +370,7 @@ reportObject <- reproCheck(reportedValue = '.003',
 
 # Step 5: Conclusion
 
-We generally reproduced all findings of the paper, despite some major numerical errors in small values. My suspicion is that these are largely caused by SPSS/R differences; this hypothesis could be tested directly. 
+We generally reproduced the findings of the paper, despite some major numerical errors in small values. Our suspicion is that these are largely caused by SPSS/R differences; this hypothesis could be tested directly. We did have trouble reproducing the PCA to generate the wise reasoning composite scores from the raw data. We think this due to a missing variable for question 4A from Table 1 and 5 missing values in the raw data file that are not mentioned in the paper.
 
 ```{r}
 Author_Assistance = FALSE # was author assistance provided? (if so, enter TRUE)
