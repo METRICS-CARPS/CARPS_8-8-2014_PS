@@ -76,8 +76,7 @@ descript <- d_raw %>%
   summarise(n = n(), 
             n_female = sum(gender == 1)) 
 
-descript %>%
-  kable
+descript %>% kable()
 ```
 
 ```{r}
@@ -122,7 +121,7 @@ From the included key, the following variables appear to map to these questions 
 * `compr3`: When experiencing something like this, a person should generally be ready to put the well-being of the relationship over their personal interests. [2b]
 * `certainty`: Please, think about your answers from before. How certain are you in your answers/statements? [1c]
 
-I investigated the hypothesis that Question 4a maps to:
+We investigated the hypothesis that Question 4a maps to:
 
 * `p.future`: How do you think your relationship will develop in the future after this incident? Please use at least 5 minutes to type it down in the box below.
 
@@ -136,20 +135,27 @@ However, this variable does not exist in the `Study_2_updated.sav` raw data file
 
 INSUFFICIENT INFORMATION ERROR
 
-Ignoring this variable, we select the variables we need for this analysis and then gather them into two dataframes. One has the wisdom composite, and one includes the variables. (Note this second stays in wide format for PCA). 
+KM note: the authors responded about the variable for Question 4a, saying:
+
+>  I think the score you are looking for is “flexible_n.” 5 ppl miss entries there (either 2 nonsense or 3 looked at the question, but did not answer it) and hence they were missing. I guess I screwed up when calculating the factor score, using listwise instead of pairwise matrix (though, one could of course argue that those 5 ppl may not be reliable; but that is post-hoc). This would also explain why the total N for FAC1_1 is smaller by these five people.
+
+We interpret using a "listwise matrix" as removing all the data for participants with any missing data (see [this](http://www.statisticssolutions.com/missing-data-listwise-vs-pairwise/) post).
+
+With this information we now try to reproduce the PCA. We  select the variables we need for this analysis and then gather them into two dataframes. One has the wisdom composite, and one includes the variables. (Note this second stays in wide format for PCA and we only keep participants with complete data). 
 
 ```{r}
 # do some releveling using key
 d_raw <- d_raw %>%
   mutate(distance = ifelse(distance == -.5, "immersed", "distancing"), 
-         issue = ifelse(issue == -.5, "self", "other"))
+         issue = ifelse(issue == -.5, "self", "other")) 
 
 d_allqs <- d_raw %>%
   select(ID, distance, issue, 
-         persp, limits, compr1, persp2, compr3, certainty)
+         persp, limits, compr1, persp2, compr3, certainty, flexible_n) %>% 
+  filter(!is.na(flexible_n))
 
 d <- d_raw %>%
-  select(ID, distance, issue, FAC1_1)
+  select(ID, distance, issue, FAC1_1, flexible_n)
 ```
 
 # Step 4: Run analysis
@@ -170,10 +176,12 @@ Confirming that all participants are retained for this next step.
 We can now try to redo the PCA to create the wisdom score.
 
 ```{r}
-d_allqs_mat <- as.matrix(select(d_allqs, persp, limits, compr1, persp2, compr3, certainty))
+d_allqs_mat <- as.matrix(select(d_allqs, persp, limits, compr1, persp2, compr3, certainty, flexible_n))
 pcs <- princomp(d_allqs_mat)
 
-d$new_pca <- pcs$scores[,1]
+d <- d %>%
+  filter(!is.na(flexible_n)) %>% 
+  mutate(new_pca = pcs$scores[,1])
 
 ggplot(d, aes(x = FAC1_1, y = new_pca)) + 
   geom_point()
@@ -189,19 +197,11 @@ INSUFFICIENT INFORMATION ERROR
 
 It's not clear what is happening with the NAs but I am assuming that they are simply excluded. Part of the issue is that I don't know why they are NAs. It doesn't look like any data are missing.
 
-```{r}
-filter(d_allqs, is.na(d$FAC1_1)) %>%
-  kable()
-```
+Author's response: 
 
-They are not concentrated in one condition. 
+> I think the score you are looking for is “flexible_n.” 5 ppl miss entries there (either 2 nonsense or 3 looked at the question, but did not answer it) and hence they were missing. I guess I screwed up when calculating the factor score, using listwise instead of pairwise matrix (though, one could of course argue that those 5 ppl may not be reliable; but that is post-hoc). This would also explain why the total N for FAC1_1 is smaller by these five people.
 
-```{r}
-d %>%
-  group_by(distance, issue) %>%
-  summarise(n_nas = sum(is.na(FAC1_1))) %>%
-  kable()
-```
+So it seems that participants who did not have complete data (because they had missing data for the `flexible_n` question) were removed from the analysis.
 
 We want to reproduce Figure 1:
 
@@ -309,6 +309,37 @@ reportObject <- reproCheck(reportedValue = '.12',
                            valueType = 'pes')
 ```
 
+We get two minor errors for the t-value and the $\eta^2$. Let's try running the ANOVA but filtering out the participants who are not part of the comparison of interest. 
+
+```{r, eval = F}
+c1_aov_2 <- ezANOVA(data = d_contrast %>% filter(contrast1 != 0), 
+                  dv = FAC1_1, 
+                  wid = ID, 
+                  between = .(contrast1), 
+                  type = 3)
+
+c1_df_2 <- c1_aov_2$ANOVA$DFd
+c1_f_2 <- c1_aov_2$ANOVA$F
+c1_t_2 <- sqrt(c1_aov_2$ANOVA$F)
+c1_p_2 <- c1_aov_2$ANOVA$p
+c1_ges_2 <- c1_aov_2$ANOVA$ges
+
+reportObject <- reproCheck(reportedValue = '113', 
+                           obtainedValue = c1_df_2,
+                           valueType = 'df')
+reportObject <- reproCheck(reportedValue = '< .001', 
+                           obtainedValue = c1_p_2,
+                           valueType = 'p', eyeballCheck = TRUE)
+reportObject <- reproCheck(reportedValue = '3.93', 
+                           obtainedValue = c1_t_2,
+                           valueType = 't')
+reportObject <- reproCheck(reportedValue = '.12', 
+                           obtainedValue = c1_ges_2,
+                           valueType = 'pes')
+```
+
+In this version of the anlaysis, the degrees of freedom are way off becase not all of the data are being used and the $\eta^2$ value is off, but we get closer to reproducing the reported t-value. [We should try to reproduce in SPSS or ask for clarification about how the ANOVA was specified]
+
 > Extending prior research on reasoning about societal events (Kross & Grossmann, 2012), we next tested if people in the self distanced condition reasoned more wisely about relationship conflicts than participants in the self-immersed condition (Contrast 2). This was indeed the case (see Fig. 1), t(113) = 2.73, p = .007, ηp 2 = .06.
 
 ```{r}
@@ -323,7 +354,6 @@ c2_f <- c2_aov$ANOVA$F
 c2_t <- sqrt(c2_aov$ANOVA$F)
 c2_p <- c2_aov$ANOVA$p
 c2_ges <- c2_aov$ANOVA$ges
-
 
 reportObject <- reproCheck(reportedValue = '113', 
                            obtainedValue = c2_df,
@@ -373,7 +403,7 @@ reportObject <- reproCheck(reportedValue = '.003',
 We generally reproduced the findings of the paper, despite some major numerical errors in small values. Our suspicion is that these are largely caused by SPSS/R differences; this hypothesis could be tested directly. We did have trouble reproducing the PCA to generate the wise reasoning composite scores from the raw data. We think this due to a missing variable for question 4A from Table 1 and 5 missing values in the raw data file that are not mentioned in the paper.
 
 ```{r}
-Author_Assistance = FALSE # was author assistance provided? (if so, enter TRUE)
+Author_Assistance = TRUE # was author assistance provided? (if so, enter TRUE)
 
 Insufficient_Information_Errors <- 2 # how many discrete insufficient information issues did you encounter?
 
