@@ -338,7 +338,7 @@ reportObject <- reproCheck(reportedValue = '.12',
                            valueType = 'pes')
 ```
 
-In this version of the anlaysis, the degrees of freedom are way off becase not all of the data are being used and the $\eta^2$ value is off, but we get closer to reproducing the reported t-value. [We should try to reproduce in SPSS or ask for clarification about how the ANOVA was specified]
+In this version of the analysis, the degrees of freedom are way off becase not all of the data are being used and the $\eta^2$ value is off, but we get closer to reproducing the reported t-value. [We should try to reproduce in SPSS or ask for clarification about how the ANOVA was specified]
 
 > Extending prior research on reasoning about societal events (Kross & Grossmann, 2012), we next tested if people in the self distanced condition reasoned more wisely about relationship conflicts than participants in the self-immersed condition (Contrast 2). This was indeed the case (see Fig. 1), t(113) = 2.73, p = .007, ηp 2 = .06.
 
