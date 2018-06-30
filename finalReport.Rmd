@@ -400,12 +400,12 @@ reportObject <- reproCheck(reportedValue = '.003',
 
 # Step 5: Conclusion
 
-We generally reproduced the findings of the paper, despite some major numerical errors in small values. Our suspicion is that these are largely caused by SPSS/R differences; this hypothesis could be tested directly. We did have trouble reproducing the PCA to generate the wise reasoning composite scores from the raw data. We think this due to a missing variable for question 4A from Table 1 and 5 missing values in the raw data file that are not mentioned in the paper.
+We generally reproduced the findings of the paper, despite some major numerical errors in small values. Our suspicion is that these migght be caused by SPSS/R differences; this hypothesis could be tested directly. We initially had trouble reproducing the PCA to generate the wise reasoning composite scores from the raw data due to a missing variable for question 4A from Table 1 and 5 missing values in the raw data file that are not mentioned in the paper. But after author assistance, these insufficient information errors were resolved.
 
 ```{r}
 Author_Assistance = TRUE # was author assistance provided? (if so, enter TRUE)
 
-Insufficient_Information_Errors <- 2 # how many discrete insufficient information issues did you encounter?
+Insufficient_Information_Errors <- 0 # how many discrete insufficient information issues did you encounter?
 
 # Assess the causal locus (discrete reproducibility issues) of any reproducibility errors. Note that there doesn't necessarily have to be a one-to-one correspondance between discrete reproducibility issues and reproducibility errors. For example, it could be that the original article neglects to mention that a Greenhouse-Geisser correct was applied to ANOVA outcomes. This might result in multiple reproducibility errors, but there is a single causal locus (discrete reproducibility issue).
 
