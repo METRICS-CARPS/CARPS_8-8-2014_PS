@@ -77,9 +77,7 @@ descript <- d_raw %>%
             n_female = sum(gender == 1)) 
 
 descript %>% kable()
-```
 
-```{r}
 reportObject <- reproCheck(reportedValue = "120", obtainedValue = descript$n, valueType = 'n')
 reportObject <- reproCheck(reportedValue = "80", obtainedValue = descript$n_female, valueType = 'n')
 ```
@@ -125,23 +123,13 @@ We investigated the hypothesis that Question 4a maps to:
 
 * `p.future`: How do you think your relationship will develop in the future after this incident? Please use at least 5 minutes to type it down in the box below.
 
-But that's a free-form description and I don't think that's what we're talking about. Given this I do not see a variable that maps to this one.
-
-KM: I took another pass through their codebook, and I think Question 4a maps onto the "Outcomes" variable. From the key,
-
-> Outcomes: Thinking about how the events with regard to this incident will unfold in the future, how many diffe...-Number of alternatives
-
-However, this variable does not exist in the `Study_2_updated.sav` raw data file. Thus, this is an:
-
-INSUFFICIENT INFORMATION ERROR
-
-KM note: the authors responded about the variable for Question 4a, saying:
+But that's a free-form description and I don't think that's what we're talking about. Given this I do not see a variable that maps to this one. Thus, this is an INSUFFICIENT INFORMATION ERROR. However, the authors responded to our inquiry about the variable for Question 4a, saying:
 
 >  I think the score you are looking for is “flexible_n.” 5 ppl miss entries there (either 2 nonsense or 3 looked at the question, but did not answer it) and hence they were missing. I guess I screwed up when calculating the factor score, using listwise instead of pairwise matrix (though, one could of course argue that those 5 ppl may not be reliable; but that is post-hoc). This would also explain why the total N for FAC1_1 is smaller by these five people.
 
 We interpret using a "listwise matrix" as removing all the data for participants with any missing data (see [this](http://www.statisticssolutions.com/missing-data-listwise-vs-pairwise/) post).
 
-With this information we now try to reproduce the PCA. We  select the variables we need for this analysis and then gather them into two dataframes. One has the wisdom composite, and one includes the variables. (Note this second stays in wide format for PCA and we only keep participants with complete data). 
+With this information we now try to reproduce the PCA. We select the variables we need for this analysis and then gather them into two dataframes. One has the wisdom composite, and one includes the variables. (Note this second stays in wide format for PCA and we only keep participants with complete data). 
 
 ```{r}
 # do some releveling using key
@@ -155,7 +143,7 @@ d_allqs <- d_raw %>%
   filter(!is.na(flexible_n))
 
 d <- d_raw %>%
-  select(ID, distance, issue, FAC1_1, flexible_n)
+  select(ID, distance, issue, code, FAC1_1, flexible_n)
 ```
 
 # Step 4: Run analysis
@@ -171,9 +159,7 @@ d %>%
   kable()
 ```
 
-Confirming that all participants are retained for this next step. 
-
-We can now try to redo the PCA to create the wisdom score.
+Confirming that all participants are retained for this next step. We can now try to redo the PCA to create the wisdom score.
 
 ```{r}
 d_allqs_mat <- as.matrix(select(d_allqs, persp, limits, compr1, persp2, compr3, certainty, flexible_n))
@@ -191,19 +177,15 @@ Overall it is clear that there is a strong correlation ($r = `r signif(cor(d$FAC
 
 ## Descriptive statistics
 
-Note that there are 5 NAs in FAC1_1. Not sure how these are dealt with in the paper, but they are there in the original `d_raw`.
+Note that there are 5 NAs in FAC1_1. Not sure how these are dealt with in the paper, but they are there in the original `d_raw`. This is an INSUFFICIENT INFORMATION ERROR in the original article because it's not clear what is happening with the NAs but I am assuming that they are simply excluded. 
 
-INSUFFICIENT INFORMATION ERROR
-
-It's not clear what is happening with the NAs but I am assuming that they are simply excluded. Part of the issue is that I don't know why they are NAs. It doesn't look like any data are missing.
-
-Author's response: 
+The author's responded, saying: 
 
 > I think the score you are looking for is “flexible_n.” 5 ppl miss entries there (either 2 nonsense or 3 looked at the question, but did not answer it) and hence they were missing. I guess I screwed up when calculating the factor score, using listwise instead of pairwise matrix (though, one could of course argue that those 5 ppl may not be reliable; but that is post-hoc). This would also explain why the total N for FAC1_1 is smaller by these five people.
 
 So it seems that participants who did not have complete data (because they had missing data for the `flexible_n` question) were removed from the analysis.
 
-We want to reproduce Figure 1:
+Next we reproduce Figure 1:
 
 ![Figure 1](images/fig1.png)
 
@@ -230,7 +212,7 @@ ggplot(ms,
 
 This generally looks similar - there might be some small numerical differences in the error bars but it's hard to tell just by eyeballing.  
 
-Eyeball checks for the mean composite scores in Figure 1.
+Add eyeball checks for the mean composite scores in Figure 1.
 
 ```{r}
 # distancing other
@@ -280,10 +262,49 @@ d_contrast <- d_nona %>%
                                TRUE ~ 0))
 ```
 
-Contrast 1 ANOVA. The degrees of freedom are consistent with all data being included, but the contrast being set to zero for comparisons that are not of interest. 
+This coding does not match exactly how they coded their contrasts based on the SPSS output they shared (see the study2_spss_output.pdf file). So let's try reproducing their ANOVA using the `code` variable and the author's contrast specifications. First, check that we can reproduce the number of participants in each `code` condition.
 
 ```{r}
-c1_aov <- ezANOVA(data = d_contrast, 
+d_contrast %>% count(code) %>% kable()
+```
+
+Now create the dummy codes based on their SPSS output using the `code` variable.
+  * contrast 1: `/lmatrix code -2 0 1 1`
+  * contrast 2: `/lmatrixcode  -1 1 0 0`
+  * contrast 3: `/lmatrixcode 0 0 -1 1`
+
+```{r}
+d_authors_contrast <- d_nona %>%
+  mutate(contrast1 = case_when(code == 1 ~ -2, 
+                               code == 2 ~ 0,
+                               code == 3 ~ 1,
+                               code == 4 ~ 1),
+         contrast2 = case_when(code == 1 ~ -1, 
+                               code == 2 ~ 1,
+                               code == 3 ~ 0,
+                               code == 4 ~ 0),
+         contrast3 = case_when(code == 1 ~ 0, 
+                               code == 2 ~ 0,
+                               code == 3 ~ -1,
+                               code == 4 ~ 1)) 
+```
+
+Check the number of participants in each bin.
+
+```{r}
+d_authors_contrast %>% count(contrast1) %>% kable()
+```
+
+It looks like the only difference in ANOVA specificaito is that they used -2 vs. 1 and we used -1 vs. 1 to specify the contrast of interest. 
+
+### Contrast 1 ANOVA
+
+The degrees of freedom are consistent with all data being included, but the contrast being set to zero for comparisons that are not of interest. 
+
+Note that here we are using the contrasts as specified by the authors by changing the `data = d_authors_contrast` agument to `ezANOVA`. To see the output of our first attempt to reproduce, you can change the data back to `d_contrast`.
+
+```{r}
+c1_aov <- ezANOVA(data = d_authors_contrast, 
                   dv = FAC1_1, 
                   wid = ID, 
                   between = .(contrast1), 
@@ -309,41 +330,24 @@ reportObject <- reproCheck(reportedValue = '.12',
                            valueType = 'pes')
 ```
 
-We get two minor errors for the t-value and the $\eta^2$. Let's try running the ANOVA but filtering out the participants who are not part of the comparison of interest. 
+Using the authors' specified contrast as in their SPSS output (see study2_spss_output.pdf file)[^1], we can now reproduce the values reported in the paper for this contrast. Next, we try to reproduce the two other ANOVAs using the author's contrast codes.  
 
-```{r, eval = F}
-c1_aov_2 <- ezANOVA(data = d_contrast %>% filter(contrast1 != 0), 
-                  dv = FAC1_1, 
-                  wid = ID, 
-                  between = .(contrast1), 
-                  type = 3)
+[^1] The file study2_spss_output.pdf contains SPSS output generated by Matthias Allritz based on SPSS syntax shared by the origional author's in an email to the CARPs group. Matthias was able to reproduce all of the values reported in the original paper using their code. 
 
-c1_df_2 <- c1_aov_2$ANOVA$DFd
-c1_f_2 <- c1_aov_2$ANOVA$F
-c1_t_2 <- sqrt(c1_aov_2$ANOVA$F)
-c1_p_2 <- c1_aov_2$ANOVA$p
-c1_ges_2 <- c1_aov_2$ANOVA$ges
-
-reportObject <- reproCheck(reportedValue = '113', 
-                           obtainedValue = c1_df_2,
-                           valueType = 'df')
-reportObject <- reproCheck(reportedValue = '< .001', 
-                           obtainedValue = c1_p_2,
-                           valueType = 'p', eyeballCheck = TRUE)
-reportObject <- reproCheck(reportedValue = '3.93', 
-                           obtainedValue = c1_t_2,
-                           valueType = 't')
-reportObject <- reproCheck(reportedValue = '.12', 
-                           obtainedValue = c1_ges_2,
-                           valueType = 'pes')
-```
-
-In this version of the analysis, the degrees of freedom are way off becase not all of the data are being used and the $\eta^2$ value is off, but we get closer to reproducing the reported t-value. [We should try to reproduce in SPSS or ask for clarification about how the ANOVA was specified]
+### Contrast 2 ANOVA
 
 > Extending prior research on reasoning about societal events (Kross & Grossmann, 2012), we next tested if people in the self distanced condition reasoned more wisely about relationship conflicts than participants in the self-immersed condition (Contrast 2). This was indeed the case (see Fig. 1), t(113) = 2.73, p = .007, ηp 2 = .06.
 
+Check the number of participants in each condition.
+
 ```{r}
-c2_aov <- ezANOVA(data = d_contrast, 
+d_authors_contrast %>% count(contrast2) %>% kable()
+```
+
+Fit the ANOVA. Note that we are adding `eyeballCheck = TRUE` for some of the values because we were unable to reproduce them in R but the values were able to be reproduced using SPSS with the author's original code. 
+
+```{r}
+c2_aov <- ezANOVA(data = d_authors_contrast, 
                   dv = FAC1_1, 
                   wid = ID, 
                   between = .(contrast2), 
@@ -360,19 +364,26 @@ reportObject <- reproCheck(reportedValue = '113',
                            valueType = 'df')
 reportObject <- reproCheck(reportedValue = '.007', 
                            obtainedValue = c2_p,
-                           valueType = 'p')
+                           valueType = 'p',
+                           eyeballCheck = TRUE)
 reportObject <- reproCheck(reportedValue = '2.73', 
                            obtainedValue = c2_t,
-                           valueType = 't')
+                           valueType = 't',
+                           eyeballCheck = TRUE)
 reportObject <- reproCheck(reportedValue = '.06', 
                            obtainedValue = c2_ges,
-                           valueType = 'pes')
+                           valueType = 'pes',
+                           eyeballCheck = TRUE)
 ```
 
->  We also tested whether reasoning about other people’s problems benefits from additional distance and found that participants in the other-distanced condition did not differ from participants in the other-immersed conditions (Contrast 3; see Fig. 1), t(113) = 0.56, n.s., ηp 2 = .003; we return to this finding in the General Discussion.
+Even using their specified contrast, we can't reproduce the $p$ value or the $\eta^2$. But these were major numerical errors in small values. Since the values were able to be reproduced by the SPSS re-analysis (see study2_spss_output.pdf file), we think these differences are caused by differences in how R and SPSS are handling the relevant computations for the ANOVA.
+
+### Contrast 3 ANOVA
+
+> We also tested whether reasoning about other people’s problems benefits from additional distance and found that participants in the other-distanced condition did not differ from participants in the other-immersed conditions (Contrast 3; see Fig. 1), t(113) = 0.56, n.s., ηp 2 = .003; we return to this finding in the General Discussion.
 
 ```{r}
-c3_aov <- ezANOVA(data = d_contrast, 
+c3_aov <- ezANOVA(data = d_authors_contrast, 
                   dv = FAC1_1, 
                   wid = ID, 
                   between = .(contrast3), 
@@ -389,14 +400,19 @@ reportObject <- reproCheck(reportedValue = '113',
                            valueType = 'df')
 reportObject <- reproCheck(reportedValue = 'ns', 
                            obtainedValue = c3_p,
-                           valueType = 'p', eyeballCheck = TRUE)
+                           valueType = 'p', 
+                           eyeballCheck = TRUE)
 reportObject <- reproCheck(reportedValue = '.56', 
                            obtainedValue = c3_t,
-                           valueType = 't')
+                           valueType = 't',
+                           eyeballCheck = TRUE)
 reportObject <- reproCheck(reportedValue = '.003', 
                            obtainedValue = c3_ges,
-                           valueType = 'pes')
+                           valueType = 'pes',
+                           eyeballCheck = TRUE)
 ```
+
+Similar to contrast 2, we are unable to reproduce some values: the $t$ statistic and the $\eta^2$. But these were major numerical errors in small values. Since the values were able to be reproduced by the SPSS analysis, we think these differences are caused by differences in how R and SPSS are handling the relevant computations for the ANOVA.
 
 # Step 5: Conclusion
 
@@ -410,10 +426,10 @@ Insufficient_Information_Errors <- 0 # how many discrete insufficient informatio
 # Assess the causal locus (discrete reproducibility issues) of any reproducibility errors. Note that there doesn't necessarily have to be a one-to-one correspondance between discrete reproducibility issues and reproducibility errors. For example, it could be that the original article neglects to mention that a Greenhouse-Geisser correct was applied to ANOVA outcomes. This might result in multiple reproducibility errors, but there is a single causal locus (discrete reproducibility issue).
 
 locus_typo <- 0 # how many discrete issues did you encounter that related to typographical errors?
-locus_specification <- 1 # how many discrete issues did you encounter that related to incomplete, incorrect, or unclear specification of the original analyses?
+locus_specification <- 0 # how many discrete issues did you encounter that related to incomplete, incorrect, or unclear specification of the original analyses?
 locus_analysis <- 0 # how many discrete issues did you encounter that related to errors in the authors' original analyses?
 locus_data <- 0 # how many discrete issues did you encounter that related to errors in the data files shared by the authors?
-locus_unidentified <- 1 # how many discrete issues were there for which you could not identify the cause
+locus_unidentified <- 0 # how many discrete issues were there for which you could not identify the cause
 
 Affects_Conclusion <- FALSE # Do any reproducibility issues encounter appear to affect the conclusions made in the original article? TRUE, FALSE, or NA. This is a subjective judgement, but you should taking into account multiple factors, such as the presence/absence of decision errors, the number of target outcomes that could not be reproduced, the type of outcomes that could or could not be reproduced, the difference in magnitude of effect sizes, and the predictions of the specific hypothesis under scrutiny.
 ```
