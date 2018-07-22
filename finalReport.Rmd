@@ -14,10 +14,10 @@ reportType <- "final" # specify whether this is the 'pilot' report or 'final' re
 pilotNames <- "Michael Frank" # insert the pilot's name here e.g., "Tom Hardwicke".  If there are multiple cpilots enter both names in a character string e.g., "Tom Hardwicke, Bob Dylan"
 copilotNames <- "Kyle MacDonald" # # insert the co-pilot's name here e.g., "Michael Frank". If there are multiple co-pilots enter both names in a character string e.g., "Tom Hardwicke, Bob Dylan"
 pilotTTC <- 120 # insert the pilot's estimated time to complete (in minutes, fine to approximate) e.g., 120
-copilotTTC <- 30 # insert the co-pilot's estimated time to complete (in minutes, fine to approximate) e.g., 120
+copilotTTC <- 60 # insert the co-pilot's estimated time to complete (in minutes, fine to approximate) e.g., 120
 pilotStartDate <- as.Date("06/13/18", format = "%m/%d/%y") # insert the pilot's start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
 copilotStartDate <- as.Date("06/13/18", format = "%m/%d/%y") # insert the co-pilot's start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
-completionDate <- NA # copilot insert the date of final report completion (after any necessary rounds of author assistance) in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+completionDate <- as.Date("07/21/18", format = "%m/%d/%y") # copilot insert the date of final report completion (after any necessary rounds of author assistance) in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
 ```
 
 ------
@@ -295,7 +295,7 @@ Check the number of participants in each bin.
 d_authors_contrast %>% count(contrast1) %>% kable()
 ```
 
-It looks like the only difference in ANOVA specificaito is that they used -2 vs. 1 and we used -1 vs. 1 to specify the contrast of interest. 
+It looks like the only difference in ANOVA specification is that they used -2 vs. 1 and we used -1 vs. 1 to specify the contrast of interest. 
 
 ### Contrast 1 ANOVA
 
@@ -416,7 +416,9 @@ Similar to contrast 2, we are unable to reproduce some values: the $t$ statistic
 
 # Step 5: Conclusion
 
-We generally reproduced the findings of the paper, despite some major numerical errors in small values. Our suspicion is that these migght be caused by SPSS/R differences; this hypothesis could be tested directly. We initially had trouble reproducing the PCA to generate the wise reasoning composite scores from the raw data due to a missing variable for question 4A from Table 1 and 5 missing values in the raw data file that are not mentioned in the paper. But after author assistance, these insufficient information errors were resolved.
+We initially had trouble reproducing the PCA to generate the wise reasoning composite scores from the raw data due to a missing variable for question 4A from Table 1 and 5 missing values in the raw data file that were not mentioned in the paper. But after author assistance, these insufficient information errors were resolved.
+
+Some major numerical errors in small values remained. However, the authors provided SPSS syntax and we were able to implement this and reproduce the values reported in the paper. We were still unable to reprodue these values in R. Our suspicion is that these might be caused by opaque SPSS/R computational differences - despite extensive efforts we were unable to localize the exact reason why we couldn't reproduce the values in R.
 
 ```{r}
 Author_Assistance = TRUE # was author assistance provided? (if so, enter TRUE)
@@ -426,10 +428,17 @@ Insufficient_Information_Errors <- 0 # how many discrete insufficient informatio
 # Assess the causal locus (discrete reproducibility issues) of any reproducibility errors. Note that there doesn't necessarily have to be a one-to-one correspondance between discrete reproducibility issues and reproducibility errors. For example, it could be that the original article neglects to mention that a Greenhouse-Geisser correct was applied to ANOVA outcomes. This might result in multiple reproducibility errors, but there is a single causal locus (discrete reproducibility issue).
 
 locus_typo <- 0 # how many discrete issues did you encounter that related to typographical errors?
-locus_specification <- 0 # how many discrete issues did you encounter that related to incomplete, incorrect, or unclear specification of the original analyses?
+locus_specification <- 2 # how many discrete issues did you encounter that related to incomplete, incorrect, or unclear specification of the original analyses?
 locus_analysis <- 0 # how many discrete issues did you encounter that related to errors in the authors' original analyses?
 locus_data <- 0 # how many discrete issues did you encounter that related to errors in the data files shared by the authors?
-locus_unidentified <- 0 # how many discrete issues were there for which you could not identify the cause
+locus_unidentified <- 1 # how many discrete issues were there for which you could not identify the cause
+
+# How many of the above issues were resolved through author assistance?
+locus_typo_resolved <- NA # how many discrete issues did you encounter that related to typographical errors?
+locus_specification_resolved <- 2 # how many discrete issues did you encounter that related to incomplete, incorrect, or unclear specification of the original analyses?
+locus_analysis_resolved <- NA # how many discrete issues did you encounter that related to errors in the authors' original analyses?
+locus_data_resolved <- NA # how many discrete issues did you encounter that related to errors in the data files shared by the authors?
+locus_unidentified_resolved <- 1 # how many discrete issues were there for which you could not identify the cause
 
 Affects_Conclusion <- FALSE # Do any reproducibility issues encounter appear to affect the conclusions made in the original article? TRUE, FALSE, or NA. This is a subjective judgement, but you should taking into account multiple factors, such as the presence/absence of decision errors, the number of target outcomes that could not be reproduced, the type of outcomes that could or could not be reproduced, the difference in magnitude of effect sizes, and the predictions of the specific hypothesis under scrutiny.
 ```
@@ -455,7 +464,7 @@ if(any(reportObject$comparisonOutcome != "MATCH") | Insufficient_Information_Err
 }
 
 # collate report extra details
-reportExtras <- data.frame(articleID, pilotNames, copilotNames, pilotTTC, copilotTTC, pilotStartDate, copilotStartDate, completionDate, Author_Assistance, finalOutcome, Insufficient_Information_Errors, locus_typo, locus_specification, locus_analysis, locus_data, locus_unidentified)
+reportExtras <- data.frame(articleID, pilotNames, copilotNames, pilotTTC, copilotTTC, pilotStartDate, copilotStartDate, completionDate, Author_Assistance, finalOutcome, Insufficient_Information_Errors, locus_typo, locus_specification, locus_analysis, locus_data, locus_unidentified, locus_typo_resolved, locus_specification_resolved, locus_analysis_resolved, locus_data_resolved, locus_unidentified_resolved)
 
 # save report objects
 if(reportType == "pilot"){
