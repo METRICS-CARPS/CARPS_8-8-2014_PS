@@ -47,7 +47,7 @@ library(tidyverse) # for data munging
 library(knitr) # for kable table formating
 library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
 library(readxl) # import excel files
-library(CARPSreports) # custom report functions
+library(ReproReports) # custom report functions
 library(knitr)
 library(plotrix)
 library(ggthemes)
@@ -434,10 +434,10 @@ locus_data <- 0 # how many discrete issues did you encounter that related to err
 locus_unidentified <- 1 # how many discrete issues were there for which you could not identify the cause
 
 # How many of the above issues were resolved through author assistance?
-locus_typo_resolved <- NA # how many discrete issues did you encounter that related to typographical errors?
+locus_typo_resolved <- 0 # how many discrete issues did you encounter that related to typographical errors?
 locus_specification_resolved <- 2 # how many discrete issues did you encounter that related to incomplete, incorrect, or unclear specification of the original analyses?
-locus_analysis_resolved <- NA # how many discrete issues did you encounter that related to errors in the authors' original analyses?
-locus_data_resolved <- NA # how many discrete issues did you encounter that related to errors in the data files shared by the authors?
+locus_analysis_resolved <- 0 # how many discrete issues did you encounter that related to errors in the authors' original analyses?
+locus_data_resolved <- 0 # how many discrete issues did you encounter that related to errors in the data files shared by the authors?
 locus_unidentified_resolved <- 1 # how many discrete issues were there for which you could not identify the cause
 
 Affects_Conclusion <- FALSE # Do any reproducibility issues encounter appear to affect the conclusions made in the original article? TRUE, FALSE, or NA. This is a subjective judgement, but you should taking into account multiple factors, such as the presence/absence of decision errors, the number of target outcomes that could not be reproduced, the type of outcomes that could or could not be reproduced, the difference in magnitude of effect sizes, and the predictions of the specific hypothesis under scrutiny.
@@ -451,7 +451,7 @@ reportObject <- reportObject %>%
   select(articleID, everything()) # make articleID first column
 
 # decide on final outcome
-if(any(reportObject$comparisonOutcome != "MATCH") | Insufficient_Information_Errors > 0){
+if(any(!(reportObject$comparisonOutcome %in% c("MATCH", "MINOR_ERROR"))) | Insufficient_Information_Errors > 0){
   finalOutcome <- "Failure without author assistance"
   if(Author_Assistance == T){
     finalOutcome <- "Failure despite author assistance"
